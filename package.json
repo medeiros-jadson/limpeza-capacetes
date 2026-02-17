@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "migration:run": "ts-node --transpile-only -r reflect-metadata scripts/run-migrations.ts"
+    "migration:run": "ts-node -P tsconfig.migrations.json --transpile-only -r reflect-metadata scripts/run-migrations.ts"
   },
   "dependencies": {
     "next": "16.1.6",
