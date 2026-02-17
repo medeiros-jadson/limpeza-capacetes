@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { Machine, Session, Payment, Feedback } from './entities-all';
+import { InitialSchema1739700000000 } from './migrations/1739700000000-InitialSchema';
 
 const dbUrl =
   process.env.DATABASE_URL ?? 'postgresql://postgres:postgres@localhost:5432/limpeza_capacetes';
@@ -40,7 +41,7 @@ export const AppDataSource = new DataSource({
   synchronize: process.env.NODE_ENV !== 'production',
   logging: process.env.NODE_ENV === 'development',
   entities: [Machine, Session, Payment, Feedback],
-  migrations: [],
+  migrations: [InitialSchema1739700000000],
   subscribers: [],
 });
 
