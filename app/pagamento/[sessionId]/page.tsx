@@ -127,6 +127,17 @@ export default function PagamentoPage() {
           </p>
         )}
         <Link href="/instrucoes" className="text-center text-slate-500 underline">Cancelar</Link>
+
+        <button
+          type="button"
+          onClick={async () => {
+            await fetch(`/api/sessions/${sessionId}/simulate-payment`, { method: 'POST' });
+            setStatus('approved');
+          }}
+          className="rounded border border-amber-500 bg-amber-50 py-2 text-amber-800"
+        >
+          Simular pagamento
+        </button>
       </main>
     </div>
   );

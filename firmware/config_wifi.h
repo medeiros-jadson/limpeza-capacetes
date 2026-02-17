@@ -3,9 +3,9 @@
 
 #define WIFI_SSID     "SUA_REDE"
 #define WIFI_PASSWORD "SUA_SENHA"
-#define BACKEND_HOST   "192.168.1.100"
+#define BACKEND_HOST   "167.172.223.23"
 #define BACKEND_PORT   3000
-#define MACHINE_ID     "COLE_O_UUID_DA_MAQUINA_AQUI"
-#define MACHINE_TOKEN  "dev-token-máquina-1"
+#define MACHINE_ID     "b9f37827-8156-40ce-8ba9-20c57eb7df31"
+#define MACHINE_TOKEN  "prod-token-maquina-1"
 
 #endif
