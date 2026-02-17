@@ -6,7 +6,7 @@ export class InitialSchema1739700000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`);
     await queryRunner.query(`
-      CREATE TABLE "machines" (
+      CREATE TABLE IF NOT EXISTS "machines" (
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
         "name" character varying(255) NOT NULL,
         "location" character varying(255),
@@ -20,7 +20,7 @@ export class InitialSchema1739700000000 implements MigrationInterface {
       )
     `);
     await queryRunner.query(`
-      CREATE TABLE "sessions" (
+      CREATE TABLE IF NOT EXISTS "sessions" (
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
         "machine_id" uuid NOT NULL,
         "status" character varying(20) NOT NULL DEFAULT 'CREATED',
@@ -32,7 +32,7 @@ export class InitialSchema1739700000000 implements MigrationInterface {
       )
     `);
     await queryRunner.query(`
-      CREATE TABLE "payments" (
+      CREATE TABLE IF NOT EXISTS "payments" (
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
         "session_id" uuid NOT NULL,
         "provider" character varying(50) NOT NULL DEFAULT 'mercadopago',
@@ -45,7 +45,7 @@ export class InitialSchema1739700000000 implements MigrationInterface {
       )
     `);
     await queryRunner.query(`
-      CREATE TABLE "feedbacks" (
+      CREATE TABLE IF NOT EXISTS "feedbacks" (
         "session_id" uuid NOT NULL,
         "emotion" character varying(20) NOT NULL,
         "created_at" TIMESTAMP NOT NULL DEFAULT now(),
