@@ -8,7 +8,15 @@ export class FixCleaningTypesType1739950000000 implements MigrationInterface {
   name = 'FixCleaningTypesType1739950000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP TYPE IF EXISTS "cleaning_types" CASCADE`);
+    // Só remove o tipo órfão se a tabela NÃO existir (no PostgreSQL a tabela cria um tipo com o mesmo nome; dropar o tipo com a tabela existente causa erro)
+    const tableExists = await queryRunner.query(`
+      SELECT 1 FROM information_schema.tables
+      WHERE table_schema = 'public' AND table_name = 'cleaning_types'
+      LIMIT 1
+    `);
+    if (!Array.isArray(tableExists) || tableExists.length === 0) {
+      await queryRunner.query(`DROP TYPE IF EXISTS "cleaning_types" CASCADE`);
+    }
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "cleaning_types" (
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
