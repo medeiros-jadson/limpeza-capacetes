@@ -26,10 +26,6 @@ services:
       NODE_ENV: production
       # Seed (produção): curl -H "x-seed-secret: SEU_SEGREDO" -X POST http://localhost:3000/api/seed
       SEED_SECRET: ${SEED_SECRET:-}
-      # Mercado Pago PIX (opcional; vazios = PIX mock)
-      MP_ACCESS_TOKEN: TEST-1622480758195029-031515-71902d4597393434cb5eab9468ca4141-761818159
-      MP_PAYER_EMAIL: jadson.asmedeiros@gmail.com
-      MP_WEBHOOK_SECRET: 
     depends_on:
       db:
         condition: service_healthy

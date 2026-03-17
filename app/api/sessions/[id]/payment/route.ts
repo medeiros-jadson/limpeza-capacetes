@@ -3,7 +3,7 @@ import { getDataSource } from '@/lib/db';
 import { Session, SessionStatus } from '@/lib/entities-all';
 import { Payment } from '@/lib/entities-all';
 import { emitSessionEvent } from '@/lib/events';
-import { getMercadoPagoConfig, isMercadoPagoConfigured, createPixPayment } from '@/lib/mercadopago';
+import { getMercadoPagoConfig, isMercadoPagoConfigured, createPixPayment, getPaymentDetails } from '@/lib/mercadopago';
 
 const DEFAULT_EXPIRATION_MINUTES = 5;
 const FALLBACK_EXPIRATION_MS = DEFAULT_EXPIRATION_MINUTES * 60 * 1000;
@@ -19,7 +19,7 @@ export async function POST(
     const payerEmail =
       typeof body.payerEmail === 'string' && body.payerEmail.trim()
         ? body.payerEmail.trim()
-        : mpConfig?.payerEmail ?? process.env.MP_PAYER_EMAIL ?? 'kiosk@limpezacapacetes.local';
+        : mpConfig?.payerEmail ?? 'kiosk@limpezacapacetes.local';
 
     const ds = await getDataSource();
     const session = await ds.getRepository(Session).findOne({
@@ -87,6 +87,8 @@ export async function POST(
           });
         }
 
+        await paymentRepo.save(payment);
+
         const maxExpires = new Date(Date.now() + FALLBACK_EXPIRATION_MS);
         const mpExpires = mpResult.dateOfExpiration ? new Date(mpResult.dateOfExpiration) : null;
         const expiresAt = mpExpires && mpExpires.getTime() < maxExpires.getTime()
@@ -100,6 +102,36 @@ export async function POST(
           paymentId: payment.id,
         });
       } catch (e) {
+        const err = e as { status?: number; message?: string };
+        const isIdempotencyConflict =
+          err?.status === 423 ||
+          (typeof err?.message === 'string' &&
+            (err.message.includes('Already posted the same request') ||
+              err.message.includes('resource_already_locked')));
+
+        if (isIdempotencyConflict) {
+          let pay = await paymentRepo.findOne({ where: { sessionId } });
+          if (!pay?.externalId) {
+            await new Promise((r) => setTimeout(r, 1200));
+            pay = await paymentRepo.findOne({ where: { sessionId } });
+          }
+          if (pay?.externalId) {
+            const details = await getPaymentDetails(pay.externalId);
+            if (details) {
+              const maxExpires = new Date(Date.now() + FALLBACK_EXPIRATION_MS);
+              const mpExpires = details.dateOfExpiration ? new Date(details.dateOfExpiration) : null;
+              const expiresAt =
+                mpExpires && mpExpires.getTime() < maxExpires.getTime() ? mpExpires : maxExpires;
+              return NextResponse.json({
+                status: 'pending',
+                qrCode: details.qrCode,
+                expiresAt: expiresAt.toISOString(),
+                paymentId: pay.id,
+              });
+            }
+          }
+        }
+
         console.error('[payment] Mercado Pago error:', e);
         return NextResponse.json(
           { error: 'Erro ao criar cobrança. Tente novamente.' },
@@ -108,17 +140,10 @@ export async function POST(
       }
     }
 
-    // Mock quando MP não configurado
-    payment.externalId = `mock_${sessionId}_${Date.now()}`;
-    await paymentRepo.save(payment);
-    const expiresAt = new Date(Date.now() + FALLBACK_EXPIRATION_MS);
-    const qrCode = `00020126580014br.gov.bcb.pix0136mock-${sessionId}-${payment.id}520400005303986540${amountReais.toFixed(2)}5802BR62070503***6304`;
-    return NextResponse.json({
-      status: 'pending',
-      qrCode,
-      expiresAt: expiresAt.toISOString(),
-      paymentId: payment.id,
-    });
+    return NextResponse.json(
+      { error: 'Pagamento PIX não configurado. Cadastre o Mercado Pago na tabela mercadopago_config (ou via PATCH /api/config/mercadopago).' },
+      { status: 503 }
+    );
   } catch (e) {
     console.error(e);
     return NextResponse.json(

@@ -22,11 +22,11 @@ Sistema de limpeza de capacetes com pagamento PIX (Mercado Pago), controle via E
 Requer Docker e Docker Compose. Sobe PostgreSQL e a aplicação.
 
 ```bash
-cp .env.example .env   # opcional: edite .env com SEED_SECRET, MP_ACCESS_TOKEN, etc.
+cp .env.example .env   # opcional: edite .env com SEED_SECRET
 docker compose up -d --build
 ```
 
-O Compose lê as variáveis do `.env` do projeto (SEED_SECRET, MP_ACCESS_TOKEN, MP_PAYER_EMAIL, MP_WEBHOOK_SECRET). Se não houver `.env` ou as variáveis estiverem vazias, a app sobe com PIX mock.
+O Compose lê o `.env` (ex.: SEED_SECRET). Mercado Pago é configurado só pelo banco (tabela mercadopago_config).
 
 Aguarde o app estar no ar (porta 3000). Criar máquina de teste:
 
@@ -98,27 +98,23 @@ O token da máquina está em `Machine.apiToken` (no seed: `dev-token-máquina-1`
 
 ## Pagamento PIX (Mercado Pago)
 
-Para usar **PIX real**, configure no [painel do Mercado Pago](https://www.mercadopago.com.br/developers/panel/app):
+A configuração do Mercado Pago é feita **somente pelo banco de dados** (tabela `mercadopago_config`).
 
-1. Crie uma aplicação e obtenha o **Access Token** (produção ou teste).
-2. Defina no ambiente: `MP_ACCESS_TOKEN=<seu_access_token>`.
-3. Em **Webhooks / Notificações**, configure a URL: `https://seu-dominio.com/api/webhooks/mercadopago` e selecione o evento **Pagamentos**. (Se a aplicação não tiver domínio e for acessada só por IP, o webhook não será chamado pelo MP; nesse caso a tela de pagamento usa **polling automático** a cada 4 s em `GET /api/sessions/[id]/payment-status` para detectar aprovação e seguir o fluxo.)
-4. (Opcional) `MP_PAYER_EMAIL`: e-mail usado quando o front não envia `payerEmail` (ex.: kiosk). (Opcional) `MP_WEBHOOK_SECRET`: segredo para validar notificações; notificações PIX/QR Code não usam assinatura.
+1. No [painel do Mercado Pago](https://www.mercadopago.com.br/developers/panel/app), crie uma aplicação e obtenha o **Access Token** (produção ou teste). A **conta vendedor** precisa ter **chaves PIX cadastradas** para receber PIX; sem isso a API pode retornar 500 ao criar o pagamento.
+2. Rode a migration: `npm run migration:run` (cria a tabela `mercadopago_config`).
+3. Cadastre o token e o e-mail: **PATCH** `/api/config/mercadopago` com body `{ "accessToken": "SEU_TOKEN", "payerEmail": "email@exemplo.com", "active": true }` ou via SQL: `UPDATE mercadopago_config SET access_token = 'SEU_TOKEN', payer_email = 'email@exemplo.com', active = true WHERE id = (SELECT id FROM mercadopago_config LIMIT 1);`
+4. Em **Webhooks / Notificações** no painel MP, configure a URL `https://seu-dominio.com/api/webhooks/mercadopago` e o evento **Pagamentos**. (Sem domínio, use o **polling automático** na tela de pagamento.)
 
-**Sem `MP_ACCESS_TOKEN`** o sistema continua com PIX mock (QR e countdown funcionam, pagamento é simulado em dev).
+**Sem configuração no banco** (nenhuma linha com `active = true` e `access_token` preenchido), a criação de pagamento retorna erro 503; é obrigatório configurar o Mercado Pago para gerar PIX.
 
-**Token de teste (TEST-...):** com Access Token de **teste**, o Mercado Pago aprova o PIX automaticamente (não é preciso escanear o QR). O pagamento passa a "approved" em poucos segundos e o polling da tela detecta e redireciona para a próxima etapa.
-
-**Configuração pelo banco de dados:** a tabela `mercadopago_config` armazena `access_token`, `payer_email`, `webhook_secret` e `active`. Se existir uma linha com `active = true` e `access_token` preenchido, essa configuração é usada; caso contrário, o sistema usa as variáveis de ambiente. Rodar a migration: `npm run migration:run`. Atualizar via API: `GET /api/config/mercadopago` (retorna config com token mascarado) e `PATCH /api/config/mercadopago` com body `{ "accessToken": "...", "payerEmail": "...", "webhookSecret": "...", "active": true }`. Ou via SQL: `UPDATE mercadopago_config SET access_token = 'SEU_TOKEN', payer_email = 'email@exemplo.com' WHERE id = (SELECT id FROM mercadopago_config LIMIT 1);`
+**Token de teste (TEST-...):** no ambiente de teste do MP o pagamento pode ser aprovado automaticamente; o polling detecta e redireciona.
 
 ## Variáveis de ambiente
 
-| Variável           | Descrição                                                |
-|--------------------|----------------------------------------------------------|
-| `DATABASE_URL`     | URL do PostgreSQL                                        |
-| `MP_ACCESS_TOKEN`  | Access Token (fallback se não houver config no banco)  |
-| `MP_PAYER_EMAIL`   | E-mail do pagador (fallback)                             |
-| `MP_WEBHOOK_SECRET`| Segredo do webhook (fallback)                            |
+| Variável       | Descrição                 |
+|----------------|---------------------------|
+| `DATABASE_URL` | URL do PostgreSQL         |
+| `SEED_SECRET`  | Opcional; protege /api/seed |
 
 ## Tablet / Kiosk
 
@@ -139,12 +135,12 @@ Para uso em tablet em modo kiosk (tela cheia, sem barra de endereço), use um na
 
 - PostgreSQL + TypeORM: entidades Machine, Session, Payment, Feedback, CleaningType, Coupon
 - Migrations para schema inicial, tipos de limpeza e cupons (coupons: code, discount_percent, active)
-- API: listagem e status de máquinas; criação de sessão; geração de pagamento PIX (real via Mercado Pago se `MP_ACCESS_TOKEN` configurado, senão mock); aplicação de cupom (`POST /api/sessions/[id]/apply-coupon`) com novo QR ou 100% → PAID; webhook Mercado Pago (confirma status via GET antes de aprovar); SSE para eventos da sessão; feedback; seed; simulação de pagamento (dev)
+- API: listagem e status de máquinas; criação de sessão; geração de pagamento PIX (Mercado Pago; config obrigatória no banco); aplicação de cupom (`POST /api/sessions/[id]/apply-coupon`) com novo QR ou 100% → PAID; webhook Mercado Pago (confirma status via GET antes de aprovar); SSE para eventos da sessão; feedback; seed; simulação de pagamento (dev)
 
 ### Fluxo do usuário
 
 - **Home:** exibe tipos de limpeza (se houver) para seleção, ou preço da máquina; ao clicar no tipo → redireciona para criação de sessão e Pagamento
-- **Pagamento:** criado ao escolher tipo na Home; exibe QR PIX (real ou mock), countdown; cupom aplica desconto e gera novo QR ou 100% → Sucesso
+- **Pagamento:** criado ao escolher tipo na Home; exibe QR PIX (Mercado Pago), countdown; cupom aplica desconto e gera novo QR ou 100% → Sucesso
 - **Pagamento:** exibe PIX (QR Code), countdown; "Inserir Cupom" aplica cupom (desconto %): novo QR com valor final ou 100% → Sucesso. Countdown de expiração, escuta SSE para PAID; em dev, botão “Simular pagamento”
 - **Sucesso:** “Pagamento efetuado”; usuário fecha a porta; em dev, “Simular fechamento” → Progresso
 - **Progresso:** escuta SSE; etapas Limpeza UV e Finalização; ao FINISHED → Final

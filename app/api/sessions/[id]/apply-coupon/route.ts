@@ -20,7 +20,7 @@ export async function POST(
     const payerEmail =
       typeof body.payerEmail === 'string' && body.payerEmail.trim()
         ? body.payerEmail.trim()
-        : mpConfig?.payerEmail ?? process.env.MP_PAYER_EMAIL ?? 'kiosk@limpezacapacetes.local';
+        : mpConfig?.payerEmail ?? 'kiosk@limpezacapacetes.local';
 
     if (!code) {
       return NextResponse.json({ applied: false, error: 'Código do cupom é obrigatório' }, { status: 400 });
@@ -140,18 +140,10 @@ export async function POST(
       }
     }
 
-    payment.externalId = `mock_${sessionId}_${Date.now()}_coupon`;
-    await paymentRepo.save(payment);
-    const expiresAt = new Date(Date.now() + FALLBACK_EXPIRATION_MS);
-    const qrCode = `00020126580014br.gov.bcb.pix0136mock-${sessionId}-${payment.id}520400005303986540${amountReais.toFixed(2)}5802BR62070503***6304`;
-    return NextResponse.json({
-      applied: true,
-      discountPercent,
-      redirectToProgress: false,
-      qrCode,
-      expiresAt: expiresAt.toISOString(),
-      finalPriceReais: amountReais,
-    });
+    return NextResponse.json(
+      { applied: false, error: 'Pagamento PIX não configurado. Cadastre o Mercado Pago na tabela mercadopago_config.' },
+      { status: 503 }
+    );
   } catch (e) {
     console.error(e);
     return NextResponse.json(
