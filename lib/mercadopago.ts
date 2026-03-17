@@ -90,14 +90,19 @@ export async function createPixPayment(
     });
   } catch (err: unknown) {
     const e = err as Record<string, unknown>;
-    console.error('[mercadopago] createPixPayment erro completo:', {
+    const logPayload: Record<string, unknown> = {
       message: e?.message,
       status: e?.status,
       cause: e?.cause,
-      ...(e?.api_response && { api_response: e.api_response }),
-      ...(e?.response && { response: e.response }),
       keys: err && typeof err === 'object' ? Object.keys(err) : [],
-    });
+    };
+    if (e?.api_response != null && typeof e.api_response === 'object') {
+      logPayload.api_response = e.api_response;
+    }
+    if (e?.response != null && typeof e.response === 'object') {
+      logPayload.response = e.response;
+    }
+    console.error('[mercadopago] createPixPayment erro completo:', logPayload);
     try {
       console.error('[mercadopago] createPixPayment err (JSON):', JSON.stringify(err, null, 2));
     } catch (_) {}
