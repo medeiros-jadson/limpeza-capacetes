@@ -44,7 +44,14 @@ export async function GET(
     });
 
     if (session) {
-      return NextResponse.json({ command: 'START_CYCLE', sessionId: session.id });
+      const payload: { command: string; sessionId: string; durationSeconds?: number } = {
+        command: 'START_CYCLE',
+        sessionId: session.id,
+      };
+      if (session.durationSeconds != null) {
+        payload.durationSeconds = session.durationSeconds;
+      }
+      return NextResponse.json(payload);
     }
 
     return NextResponse.json({ command: null });

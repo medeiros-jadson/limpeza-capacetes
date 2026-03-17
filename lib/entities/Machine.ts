@@ -33,8 +33,14 @@ export class Machine {
   @Column({ type: 'timestamptz', nullable: true, name: 'last_seen_at' })
   lastSeenAt!: Date | null;
 
-  @Column({ type: 'int', default: 500, name: 'price_cents' })
-  priceCents!: number;
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    default: 5,
+    transformer: { from: (v: string | number) => (v != null ? Number(v) : 0), to: (v: number) => v },
+  })
+  price!: number;
 
   @Column({ type: 'varchar', length: 255, nullable: true, name: 'api_token' })
   apiToken!: string | null;

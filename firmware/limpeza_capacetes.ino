@@ -32,6 +32,8 @@ bool portaJaAbriu = false;
 bool comandoStartRecebido = false;
 unsigned long ultimoPoll = 0;
 String eventoPendente = "";
+/* Duração da fase UV em ms: vinda do backend (durationSeconds * 1000) ou padrão TEMPO_UV */
+unsigned long tempoUVms = TEMPO_UV;
 bool enviarEvento(const char* ev, const char* msg = nullptr);
 
 void setup() {
@@ -121,7 +123,7 @@ void loop() {
         estado = IDLE;
         break;
       }
-      if (agora - t0 >= TEMPO_UV) {
+      if (agora - t0 >= tempoUVms) {
         digitalWrite(UV_LAMPADA, LOW);
         enviarEvento("UV_OFF");
         estado = FIM_CICLO;
@@ -160,8 +162,25 @@ void loopRede(unsigned long agora) {
     int code = http.GET();
     if (code == 200) {
       String body = http.getString();
-      if (body.indexOf("\"command\":\"START_CYCLE\"") >= 0 && estado == IDLE)
+      if (body.indexOf("\"command\":\"START_CYCLE\"") >= 0 && estado == IDLE) {
+        /* Opcional: ler durationSeconds do JSON para duração da fase UV (em segundos) */
+        int idx = body.indexOf("\"durationSeconds\":");
+        if (idx >= 0) {
+          idx = body.indexOf(":", idx) + 1;
+          unsigned int sec = 0;
+          while (idx < (int)body.length() && body[idx] >= '0' && body[idx] <= '9') {
+            sec = sec * 10 + (body[idx] - '0');
+            idx++;
+          }
+          if (sec > 0)
+            tempoUVms = (unsigned long)sec * 1000;
+          else
+            tempoUVms = TEMPO_UV;
+        } else {
+          tempoUVms = TEMPO_UV;
+        }
         comandoStartRecebido = true;
+      }
     }
     http.end();
   }

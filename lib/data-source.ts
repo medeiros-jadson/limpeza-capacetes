@@ -1,7 +1,15 @@
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
-import { Machine, Session, Payment, Feedback } from './entities-all';
+import { Machine, Session, Payment, Feedback, CleaningType, Coupon, MercadoPagoConfig } from './entities-all';
 import { InitialSchema1739700000000 } from './migrations/1739700000000-InitialSchema';
+import { CleaningTypes1739800000000 } from './migrations/1739800000000-CleaningTypes';
+import { CleaningTypeInsertReais1739900000000 } from './migrations/1739900000000-CleaningTypeInsertReais';
+import { FixCleaningTypesType1739950000000 } from './migrations/1739950000000-FixCleaningTypesType';
+import { CleaningTypesPriceReais1740000000000 } from './migrations/1740000000000-CleaningTypesPriceReais';
+import { MachinesPriceReais1740100000000 } from './migrations/1740100000000-MachinesPriceReais';
+import { Coupons1740200000000 } from './migrations/1740200000000-Coupons';
+import { SessionCouponId1740300000000 } from './migrations/1740300000000-SessionCouponId';
+import { MercadoPagoConfig1740400000000 } from './migrations/1740400000000-MercadoPagoConfig';
 
 const dbUrl =
   process.env.DATABASE_URL ?? 'postgresql://postgres:postgres@localhost:5432/limpeza_capacetes';
@@ -40,8 +48,8 @@ export const AppDataSource = new DataSource({
   database: dbOptions.database,
   synchronize: process.env.NODE_ENV !== 'production',
   logging: process.env.NODE_ENV === 'development',
-  entities: [Machine, Session, Payment, Feedback],
-  migrations: [InitialSchema1739700000000],
+  entities: [Machine, Session, Payment, Feedback, CleaningType, Coupon, MercadoPagoConfig],
+  migrations: [InitialSchema1739700000000, CleaningTypes1739800000000, CleaningTypeInsertReais1739900000000, FixCleaningTypesType1739950000000, CleaningTypesPriceReais1740000000000, MachinesPriceReais1740100000000, Coupons1740200000000, SessionCouponId1740300000000, MercadoPagoConfig1740400000000],
   subscribers: [],
 });
 

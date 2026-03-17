@@ -8,6 +8,9 @@ export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
   try {
     const { id: sessionId } = await params;
     const ds = await getDataSource();

@@ -14,7 +14,7 @@ export async function GET() {
         name: m.name,
         location: m.location,
         status: m.status,
-        priceCents: m.priceCents,
+        price: Number(m.price),
         lastSeenAt: m.lastSeenAt,
       }))
     );

@@ -26,7 +26,7 @@ export async function GET(
       status: machine.status,
       available,
       offline,
-      priceCents: machine.priceCents,
+      price: Number(machine.price),
     });
   } catch (e) {
     console.error(e);

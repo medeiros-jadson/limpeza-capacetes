@@ -44,11 +44,41 @@ export class Machine {
   @Column({ type: 'timestamptz', nullable: true, name: 'last_seen_at' })
   lastSeenAt!: Date | null;
 
-  @Column({ type: 'int', default: 500, name: 'price_cents' })
-  priceCents!: number;
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    default: 5,
+    transformer: { from: (v: string | number) => (v != null ? Number(v) : 0), to: (v: number) => v },
+  })
+  price!: number;
 
   @Column({ type: 'varchar', length: 255, nullable: true, name: 'api_token' })
   apiToken!: string | null;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt!: Date;
+}
+
+@Entity('cleaning_types')
+export class CleaningType {
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
+
+  @Column({ type: 'varchar', length: 255 })
+  name!: string;
+
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    default: 0,
+    transformer: { from: (v: string | number) => (v != null ? Number(v) : 0), to: (v: number) => v },
+  })
+  price!: number;
+
+  @Column({ type: 'int', name: 'duration_seconds' })
+  durationSeconds!: number;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
@@ -62,11 +92,20 @@ export class Session {
   @Column({ type: 'uuid', name: 'machine_id' })
   machineId!: string;
 
+  @Column({ type: 'uuid', name: 'cleaning_type_id', nullable: true })
+  cleaningTypeId!: string | null;
+
   @Column({ type: 'varchar', length: 20, default: SessionStatus.CREATED })
   status!: SessionStatus;
 
   @Column({ type: 'int' })
   price!: number;
+
+  @Column({ type: 'int', name: 'duration_seconds', nullable: true })
+  durationSeconds!: number | null;
+
+  @Column({ type: 'uuid', name: 'coupon_id', nullable: true })
+  couponId!: string | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
@@ -115,4 +154,46 @@ export class Feedback {
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
+}
+
+@Entity('coupons')
+export class Coupon {
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
+
+  @Column({ type: 'varchar', length: 64, unique: true })
+  code!: string;
+
+  @Column({ type: 'int', name: 'discount_percent' })
+  discountPercent!: number;
+
+  @Column({ type: 'boolean', default: true })
+  active!: boolean;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt!: Date;
+}
+
+@Entity('mercadopago_config')
+export class MercadoPagoConfig {
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
+
+  @Column({ type: 'varchar', length: 512, nullable: true, name: 'access_token' })
+  accessToken!: string | null;
+
+  @Column({ type: 'varchar', length: 255, nullable: true, name: 'payer_email' })
+  payerEmail!: string | null;
+
+  @Column({ type: 'varchar', length: 512, nullable: true, name: 'webhook_secret' })
+  webhookSecret!: string | null;
+
+  @Column({ type: 'boolean', default: true })
+  active!: boolean;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt!: Date;
+
+  @Column({ type: 'timestamptz', nullable: true, name: 'updated_at' })
+  updatedAt!: Date | null;
 }

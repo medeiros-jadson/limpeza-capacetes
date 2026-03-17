@@ -1,20 +1,11 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import type { Metadata } from 'next';
+import './globals.css';
+import ParticleBackground from './components/ParticleBackground';
+import StatusBar from './components/StatusBar';
 
 export const metadata: Metadata = {
-  title: "Limpeza de Capacetes",
-  description: "Serviço de limpeza de capacetes com pagamento PIX",
+  title: 'Limpeza de Capacetes',
+  description: 'Serviço de limpeza de capacetes com pagamento PIX',
 };
 
 export default function RootLayout({
@@ -24,10 +15,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+      <body className="antialiased">
+        <div className="h-screen flex flex-col overflow-hidden relative">
+          <ParticleBackground />
+          <StatusBar />
+          {children}
+        </div>
       </body>
     </html>
   );

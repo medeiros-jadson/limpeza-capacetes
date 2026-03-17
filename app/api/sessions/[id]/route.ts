@@ -19,7 +19,7 @@ export async function GET(
       id: session.id,
       machineId: session.machineId,
       status: session.status,
-      price: session.price,
+      price: session.price / 100,
       createdAt: session.createdAt,
       startedAt: session.startedAt,
       finishedAt: session.finishedAt,
