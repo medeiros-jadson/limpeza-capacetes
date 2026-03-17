@@ -1,7 +1,7 @@
 /**
  * Roda as migrations do TypeORM.
- * Uso: DATABASE_URL=postgresql://... npx ts-node -r tsconfig/register.json scripts/run-migrations.ts
- * No droplet (Docker): docker compose run --rm -e DATABASE_URL=postgresql://postgres:postgres@db:5432/limpeza_capacetes app npx ts-node -r tsconfig/register.json scripts/run-migrations.ts
+ * Local: npm run migration:run (ou DATABASE_URL=... npx ts-node ...)
+ * Docker: docker compose run --rm migrate
  */
 import 'reflect-metadata';
 import { AppDataSource } from '../lib/data-source';

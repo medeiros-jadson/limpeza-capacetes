@@ -30,5 +30,19 @@ services:
       db:
         condition: service_healthy
 
+  # Rodar migrations (usa estágio builder com ts-node; --user root evita EACCES)
+  # Uso: docker compose run --rm migrate
+  migrate:
+    build:
+      context: .
+      target: builder
+    user: root
+    command: npm run migration:run
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/limpeza_capacetes
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   postgres_data:
